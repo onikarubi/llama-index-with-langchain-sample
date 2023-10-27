@@ -44,19 +44,17 @@ const ChatApp: FC = () => {
   };
 
   const postMessage = async (message: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      setTimeout(async () => {
-        try {
-          const response = await axios.post('/api', { message });
-          resolve(response.data.message);
-        } catch (error) {
-          console.error(error);
-          reject(new Error('Failed to post message'));
-        }
-      }, 2000);  // 2000 milliseconds (2 seconds) delay
-    });
+    try {
+      // await delay(3000)
+      const response = await axios.post('/api', { message });
+      return response.data.message;
+    } catch (error: any) {
+      console.error(error);
+      throw new Error(error.response?.data?.error || 'Failed to post message');
+    }
   };
 
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   return (
     <div className="p-6 bg-white rounded-xl shadow-md space-y-4" style={{ width: '500px' }}>
