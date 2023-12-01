@@ -20,8 +20,11 @@ const ChatApp: FC = () => {
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
+      return
+    } else if (e.key === 'Enter' && e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
+      setNewMessage('')
     }
   };
 
