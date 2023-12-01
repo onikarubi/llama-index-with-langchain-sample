@@ -1,6 +1,5 @@
-import React, { useState, FC, FormEvent, KeyboardEvent } from 'react';
+import React, { useState, FC, FormEvent, KeyboardEvent, useEffect } from 'react';
 import axios from 'axios';
-
 interface MessageType {
   message: string;
   role: 'user' | 'assistant';
@@ -10,29 +9,12 @@ const ChatApp: FC = () => {
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isProcess, setIsProcess] = useState<boolean>(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setNewMessage('');
-    const sendNewMessage = newMessage.trim();
-
-    if (sendNewMessage && !isSubmitting) {
-      setIsSubmitting(true);
-      const sentMessage: MessageType = { message: sendNewMessage, role: 'user' };
-      setMessages(prevMessages => [...prevMessages, sentMessage]);  // Update the state immediately with the user's message
-
-      try {
-        const res = await postMessage(sendNewMessage);
-        if (res) {
-          const receivedMessage: MessageType = { message: res, role: 'assistant' };
-          setMessages(prevMessages => [...prevMessages, receivedMessage]);  // Update the state again with the assistant's message
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
+    setMessages(prevMessages => [...prevMessages, { message: newMessage, role: 'user' }]);
+    await postMessage(newMessage);
   };
 
 
@@ -43,18 +25,39 @@ const ChatApp: FC = () => {
     }
   };
 
-  const postMessage = async (message: string): Promise<string> => {
+  const postMessage = async (message: string) => {
     try {
-      // await delay(3000)
-      const response = await axios.post('/api', { message });
-      return response.data.message;
-    } catch (error: any) {
-      console.error(error);
-      throw new Error(error.response?.data?.error || 'Failed to post message');
+      const response = await fetch('http://localhost:8000/stream_chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream'
+        },
+        body: JSON.stringify({ content: message })
+      });
+
+      if (response.body) {
+        const reader = response.body.getReader();
+        let finalContent = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const textChunk = new TextDecoder().decode(value);
+          finalContent += textChunk;
+
+          setMessages(prevMessages => {
+            const updatedMessages = prevMessages.length > 0 && prevMessages[prevMessages.length - 1].role === 'assistant'
+              ? prevMessages.slice(0, -1)
+              : [...prevMessages];
+            return [...updatedMessages, { message: finalContent, role: 'assistant' }];
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      throw new Error('Failed to post message');
     }
   };
-
-  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   return (
     <div className="p-6 bg-white rounded-xl shadow-md space-y-4" style={{ width: '500px' }}>
@@ -63,7 +66,7 @@ const ChatApp: FC = () => {
           <div
             key={index}
             className={`
-              self-${message.role === 'user' ? 'start' : 'end'}
+              ${message.role === 'assistant' && 'ml-auto'}
               rounded-xl
               p-4
               ${message.role === 'user' ? 'bg-green-200' : 'bg-blue-200'}
