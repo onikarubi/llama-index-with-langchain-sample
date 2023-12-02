@@ -18,7 +18,7 @@ const ChatApp: FC = () => {
   };
 
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       return
     } else if (e.key === 'Enter' && e.shiftKey) {
@@ -29,6 +29,7 @@ const ChatApp: FC = () => {
   };
 
   const postMessage = async (message: string) => {
+    setNewMessage('');
     try {
       setIsSubmitting(true)
       const response = await fetch('http://localhost:8000/stream_chat', {
@@ -92,8 +93,8 @@ const ChatApp: FC = () => {
       <form onSubmit={handleSubmit} className="flex space-x-2">
         <textarea
           value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
           onKeyDown={handleKeyDown}
+          onChange={(e) => setNewMessage(e.target.value)}
           className="flex-grow border rounded-xl p-2"
           placeholder="Type a message"
           rows={2}
