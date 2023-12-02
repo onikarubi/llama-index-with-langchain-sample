@@ -30,6 +30,7 @@ const ChatApp: FC = () => {
 
   const postMessage = async (message: string) => {
     try {
+      setIsSubmitting(true)
       const response = await fetch('http://localhost:8000/stream_chat', {
         method: 'POST',
         headers: {
@@ -59,6 +60,8 @@ const ChatApp: FC = () => {
     } catch (error) {
       console.error('Error:', error);
       throw new Error('Failed to post message');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
