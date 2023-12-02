@@ -20,16 +20,18 @@ const ChatApp: FC = () => {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      return;
-    } else if (e.key === 'Enter' && newMessage) {
+      return
+    } else if (e.key === 'Enter' && e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
+      setNewMessage('')
     }
   };
 
   const postMessage = async (message: string) => {
     setNewMessage('');
     try {
+      setIsSubmitting(true)
       const response = await fetch('http://localhost:8000/stream_chat', {
         method: 'POST',
         headers: {
@@ -59,6 +61,8 @@ const ChatApp: FC = () => {
     } catch (error) {
       console.error('Error:', error);
       throw new Error('Failed to post message');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
