@@ -1,5 +1,7 @@
 import React, { useState, FC, FormEvent, KeyboardEvent, useEffect } from 'react';
 import axios from 'axios';
+import 'three-dots/dist/three-dots.css';
+
 interface MessageType {
   message: string;
   role: 'user' | 'assistant';
@@ -9,10 +11,11 @@ const ChatApp: FC = () => {
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isProcess, setIsProcess] = useState<boolean>(false);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!newMessage) return;
     setMessages(prevMessages => [...prevMessages, { message: newMessage, role: 'user' }]);
     await postMessage(newMessage);
   };
@@ -30,6 +33,7 @@ const ChatApp: FC = () => {
 
   const postMessage = async (message: string) => {
     setNewMessage('');
+    setIsLoaded(true);
     try {
       setIsSubmitting(true)
       const response = await fetch('http://localhost:8000/stream_chat', {
@@ -63,6 +67,7 @@ const ChatApp: FC = () => {
       throw new Error('Failed to post message');
     } finally {
       setIsSubmitting(false);
+      setIsLoaded(false);
     }
   };
 
@@ -90,6 +95,9 @@ const ChatApp: FC = () => {
           </div>
         ))}
       </div>
+      {isLoaded && (
+        <div className="dot-flashing"></div>
+      )}
       <form onSubmit={handleSubmit} className="flex space-x-2">
         <textarea
           value={newMessage}
